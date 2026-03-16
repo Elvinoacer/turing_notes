@@ -1,0 +1,2560 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Anthropic Function Calling — Master Notes</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&family=DM+Sans:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0d0f12;
+        --bg2: #13161b;
+        --bg3: #1a1e26;
+        --bg4: #222736;
+        --border: rgba(255, 255, 255, 0.07);
+        --border2: rgba(255, 255, 255, 0.12);
+        --text: #e8eaf0;
+        --muted: #7a8099;
+        --accent: #5b8dee;
+        --accent2: #a78bfa;
+        --green: #4ade80;
+        --red: #f87171;
+        --amber: #fbbf24;
+        --teal: #34d399;
+        --pink: #f472b6;
+        --code-bg: #0a0c10;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "DM Sans", sans-serif;
+        font-size: 16px;
+        line-height: 1.75;
+      }
+
+      /* HEADER */
+      .hero {
+        background: linear-gradient(
+          135deg,
+          #0d0f12 0%,
+          #131a2e 50%,
+          #0d0f12 100%
+        );
+        border-bottom: 1px solid var(--border2);
+        padding: 3.5rem 2rem 3rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+      .hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          ellipse 60% 40% at 50% 0%,
+          rgba(91, 141, 238, 0.12) 0%,
+          transparent 70%
+        );
+      }
+      .hero-label {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 11px;
+        letter-spacing: 0.15em;
+        color: var(--accent);
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+      }
+      .hero h1 {
+        font-family: "Fraunces", serif;
+        font-size: clamp(2rem, 5vw, 3.2rem);
+        font-weight: 600;
+        color: #fff;
+        line-height: 1.2;
+        margin-bottom: 1rem;
+        position: relative;
+      }
+      .hero p {
+        font-size: 15px;
+        color: var(--muted);
+        max-width: 560px;
+        margin: 0 auto;
+        position: relative;
+      }
+
+      /* NAV */
+      .toc {
+        background: var(--bg2);
+        border-bottom: 1px solid var(--border);
+        padding: 1rem 2rem;
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .toc a {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 12px;
+        color: var(--muted);
+        text-decoration: none;
+        transition: color 0.2s;
+      }
+      .toc a:hover {
+        color: var(--accent);
+      }
+
+      /* LAYOUT */
+      .container {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 0 2rem;
+      }
+
+      /* SECTIONS */
+      .section {
+        padding: 3rem 0 2rem;
+        border-bottom: 1px solid var(--border);
+      }
+      .section:last-child {
+        border-bottom: none;
+      }
+
+      .section-num {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 11px;
+        color: var(--accent);
+        letter-spacing: 0.1em;
+        margin-bottom: 0.5rem;
+      }
+      .section h2 {
+        font-family: "Fraunces", serif;
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 1.25rem;
+        line-height: 1.3;
+      }
+      .section h3 {
+        font-family: "DM Sans", sans-serif;
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--accent2);
+        margin: 2rem 0 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        font-size: 12px;
+      }
+      p {
+        color: #c4c9d8;
+        margin-bottom: 1rem;
+      }
+
+      /* CALLOUT */
+      .callout {
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        margin: 1.25rem 0;
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-start;
+        font-size: 14px;
+      }
+      .callout-icon {
+        font-size: 16px;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+      .callout.info {
+        background: rgba(91, 141, 238, 0.1);
+        border: 1px solid rgba(91, 141, 238, 0.2);
+      }
+      .callout.info p {
+        color: #93b4f5;
+        margin: 0;
+      }
+      .callout.success {
+        background: rgba(74, 222, 128, 0.08);
+        border: 1px solid rgba(74, 222, 128, 0.2);
+      }
+      .callout.success p {
+        color: #86efac;
+        margin: 0;
+      }
+      .callout.warning {
+        background: rgba(251, 191, 36, 0.08);
+        border: 1px solid rgba(251, 191, 36, 0.2);
+      }
+      .callout.warning p {
+        color: #fde68a;
+        margin: 0;
+      }
+      .callout.danger {
+        background: rgba(248, 113, 113, 0.08);
+        border: 1px solid rgba(248, 113, 113, 0.2);
+      }
+      .callout.danger p {
+        color: #fca5a5;
+        margin: 0;
+      }
+
+      /* CODE */
+      .code-wrap {
+        background: var(--code-bg);
+        border: 1px solid var(--border2);
+        border-radius: 10px;
+        overflow: hidden;
+        margin: 1.25rem 0;
+      }
+      .code-label {
+        background: var(--bg3);
+        padding: 8px 16px;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 11px;
+        color: var(--muted);
+        letter-spacing: 0.08em;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .code-label span {
+        background: var(--bg4);
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        color: var(--accent);
+      }
+      pre {
+        padding: 1.25rem 1.5rem;
+        overflow-x: auto;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      /* SYNTAX COLORS */
+      .k {
+        color: #a78bfa;
+      } /* keyword */
+      .s {
+        color: #86efac;
+      } /* string */
+      .n {
+        color: #93b4f5;
+      } /* name/key */
+      .v {
+        color: #fbbf24;
+      } /* value/num */
+      .c {
+        color: #4a5568;
+      } /* comment */
+      .fn {
+        color: #f472b6;
+      } /* function name */
+      .t {
+        color: #34d399;
+      } /* type */
+      .p {
+        color: #e8eaf0;
+      } /* punctuation */
+
+      /* FLOW DIAGRAM */
+      .flow {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        margin: 1.5rem 0;
+      }
+      .flow-step {
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+        position: relative;
+      }
+      .flow-left {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex-shrink: 0;
+        width: 36px;
+      }
+      .flow-dot {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 13px;
+        font-weight: 500;
+        flex-shrink: 0;
+        z-index: 1;
+      }
+      .flow-line {
+        width: 1px;
+        flex: 1;
+        min-height: 24px;
+        background: var(--border2);
+      }
+      .flow-content {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        flex: 1;
+        margin-bottom: 12px;
+        transition: border-color 0.2s;
+      }
+      .flow-content:hover {
+        border-color: var(--border2);
+      }
+      .flow-title {
+        font-weight: 500;
+        color: #fff;
+        font-size: 14px;
+        margin-bottom: 4px;
+      }
+      .flow-desc {
+        font-size: 13px;
+        color: var(--muted);
+        margin: 0;
+      }
+      .flow-tag {
+        display: inline-block;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 10px;
+        padding: 2px 7px;
+        border-radius: 4px;
+        margin-top: 6px;
+      }
+
+      /* COMPARE TABLE */
+      .compare {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1.25rem 0;
+        font-size: 13px;
+      }
+      .compare th {
+        background: var(--bg3);
+        padding: 10px 16px;
+        text-align: left;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 11px;
+        color: var(--muted);
+        border: 1px solid var(--border);
+        letter-spacing: 0.05em;
+      }
+      .compare td {
+        padding: 10px 16px;
+        border: 1px solid var(--border);
+        color: #c4c9d8;
+        vertical-align: top;
+      }
+      .compare tr:nth-child(even) td {
+        background: var(--bg2);
+      }
+      .compare .yes {
+        color: var(--green);
+      }
+      .compare .no {
+        color: var(--red);
+      }
+
+      /* BADGE */
+      .badge {
+        display: inline-block;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 11px;
+        padding: 3px 10px;
+        border-radius: 5px;
+        font-weight: 500;
+      }
+      .badge.blue {
+        background: rgba(91, 141, 238, 0.15);
+        color: #93b4f5;
+      }
+      .badge.purple {
+        background: rgba(167, 139, 250, 0.15);
+        color: #c4b5fd;
+      }
+      .badge.green {
+        background: rgba(74, 222, 128, 0.12);
+        color: #86efac;
+      }
+      .badge.red {
+        background: rgba(248, 113, 113, 0.12);
+        color: #fca5a5;
+      }
+      .badge.amber {
+        background: rgba(251, 191, 36, 0.12);
+        color: #fde68a;
+      }
+
+      /* PROPERTY TABLE */
+      .prop-table {
+        margin: 1rem 0;
+      }
+      .prop-row {
+        display: grid;
+        grid-template-columns: 180px 80px 1fr;
+        gap: 12px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border);
+        font-size: 13px;
+        align-items: start;
+      }
+      .prop-row:first-child {
+        border-top: 1px solid var(--border);
+      }
+      .prop-name {
+        font-family: "IBM Plex Mono", monospace;
+        color: var(--accent2);
+      }
+      .prop-required {
+        font-size: 11px;
+      }
+      .prop-desc {
+        color: var(--muted);
+      }
+
+      /* QUIZ MINI */
+      .quiz-card {
+        background: var(--bg2);
+        border: 1px solid var(--border2);
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin: 1.5rem 0;
+      }
+      .quiz-card .q {
+        font-size: 14px;
+        font-weight: 500;
+        color: #fff;
+        margin-bottom: 1rem;
+      }
+      .quiz-opt {
+        display: block;
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 7px;
+        padding: 9px 14px;
+        margin-bottom: 6px;
+        font-size: 13px;
+        color: var(--muted);
+        cursor: pointer;
+        font-family: "IBM Plex Mono", monospace;
+        transition: all 0.15s;
+        text-align: left;
+        width: 100%;
+      }
+      .quiz-opt:hover {
+        border-color: var(--accent);
+        color: var(--text);
+      }
+      .quiz-opt.correct {
+        background: rgba(74, 222, 128, 0.1);
+        border-color: var(--green);
+        color: var(--green);
+      }
+      .quiz-opt.wrong {
+        background: rgba(248, 113, 113, 0.1);
+        border-color: var(--red);
+        color: var(--red);
+      }
+      .quiz-feedback {
+        font-size: 13px;
+        margin-top: 10px;
+        padding: 8px 12px;
+        border-radius: 7px;
+        display: none;
+      }
+      .quiz-feedback.show {
+        display: block;
+      }
+      .quiz-feedback.ok {
+        background: rgba(74, 222, 128, 0.08);
+        color: #86efac;
+      }
+      .quiz-feedback.bad {
+        background: rgba(248, 113, 113, 0.08);
+        color: #fca5a5;
+      }
+
+      /* SIDE BY SIDE */
+      .side2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin: 1.25rem 0;
+      }
+      @media (max-width: 600px) {
+        .side2 {
+          grid-template-columns: 1fr;
+        }
+      }
+      .side-card {
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        border: 1px solid;
+      }
+      .side-card.good {
+        background: rgba(74, 222, 128, 0.05);
+        border-color: rgba(74, 222, 128, 0.2);
+      }
+      .side-card.bad {
+        background: rgba(248, 113, 113, 0.05);
+        border-color: rgba(248, 113, 113, 0.2);
+      }
+      .side-card-label {
+        font-size: 11px;
+        font-family: "IBM Plex Mono", monospace;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.75rem;
+        font-weight: 500;
+      }
+      .side-card.good .side-card-label {
+        color: var(--green);
+      }
+      .side-card.bad .side-card-label {
+        color: var(--red);
+      }
+      .side-card pre {
+        padding: 0;
+        font-size: 12px;
+      }
+
+      /* FOOTER */
+      footer {
+        background: var(--bg2);
+        border-top: 1px solid var(--border);
+        padding: 2rem 2rem 6rem;
+        text-align: center;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      /* ── SMOOTH SCROLL ── */
+      html {
+        scroll-behavior: smooth;
+      }
+
+      /* ── MOBILE RESPONSIVE ── */
+      @media (max-width: 640px) {
+        .hero {
+          padding: 2.5rem 1.25rem 2rem;
+        }
+        .container {
+          padding: 0 1.25rem;
+        }
+        .section {
+          padding: 2rem 0 1.5rem;
+        }
+        .section h2 {
+          font-size: 1.4rem;
+        }
+        pre {
+          font-size: 11.5px;
+          padding: 1rem;
+        }
+        .code-label {
+          font-size: 10px;
+          padding: 7px 12px;
+        }
+        .prop-row {
+          grid-template-columns: 1fr 1fr;
+          grid-template-rows: auto auto;
+        }
+        .prop-desc {
+          grid-column: 1 / -1;
+        }
+        .compare {
+          font-size: 12px;
+        }
+        .compare th,
+        .compare td {
+          padding: 8px 10px;
+        }
+        .toc {
+          display: none;
+        }
+        body {
+          padding-bottom: 80px;
+        }
+      }
+
+      /* ── FAB BUTTON ── */
+      #nav-fab {
+        position: fixed;
+        bottom: 24px;
+        right: 20px;
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: var(--accent);
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        box-shadow: 0 4px 20px rgba(91, 141, 238, 0.4);
+        transition:
+          transform 0.2s,
+          background 0.2s;
+      }
+      #nav-fab:hover {
+        transform: scale(1.08);
+      }
+      #nav-fab.open {
+        background: var(--bg3);
+        border: 1px solid var(--border2);
+      }
+      #nav-fab svg {
+        transition: transform 0.3s;
+      }
+      #nav-fab.open svg {
+        transform: rotate(45deg);
+      }
+
+      /* ── DRAWER OVERLAY ── */
+      #nav-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 998;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s;
+        backdrop-filter: blur(2px);
+      }
+      #nav-overlay.show {
+        opacity: 1;
+        pointer-events: all;
+      }
+
+      /* ── DRAWER PANEL ── */
+      #nav-drawer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        max-height: 72vh;
+        background: var(--bg2);
+        border-top: 1px solid var(--border2);
+        border-radius: 20px 20px 0 0;
+        z-index: 999;
+        transform: translateY(100%);
+        transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      #nav-drawer.open {
+        transform: translateY(0);
+      }
+
+      .drawer-handle {
+        width: 36px;
+        height: 4px;
+        background: var(--border2);
+        border-radius: 2px;
+        margin: 12px auto 0;
+        flex-shrink: 0;
+      }
+      .drawer-header {
+        padding: 14px 20px 10px;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        color: var(--muted);
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .drawer-progress {
+        font-size: 10px;
+        color: var(--accent);
+        font-family: "IBM Plex Mono", monospace;
+      }
+      .drawer-list {
+        overflow-y: auto;
+        flex: 1;
+        padding: 8px 0 24px;
+        overscroll-behavior: contain;
+      }
+      .drawer-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 11px 20px;
+        cursor: pointer;
+        transition: background 0.12s;
+        border: none;
+        background: none;
+        width: 100%;
+        text-align: left;
+      }
+      .drawer-item:hover,
+      .drawer-item:active {
+        background: var(--bg3);
+      }
+      .drawer-item.active {
+        background: var(--bg3);
+      }
+      .drawer-num {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 10px;
+        width: 28px;
+        height: 28px;
+        border-radius: 7px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-weight: 500;
+      }
+      .drawer-num.easy {
+        background: rgba(74, 222, 128, 0.12);
+        color: #4ade80;
+      }
+      .drawer-num.medium {
+        background: rgba(251, 191, 36, 0.12);
+        color: #fbbf24;
+      }
+      .drawer-num.hard {
+        background: rgba(248, 113, 113, 0.12);
+        color: #f87171;
+      }
+      .drawer-label {
+        font-size: 13.5px;
+        color: var(--text);
+        line-height: 1.3;
+        flex: 1;
+      }
+      .drawer-label small {
+        display: block;
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 1px;
+        font-family: "IBM Plex Mono", monospace;
+      }
+      .drawer-divider {
+        padding: 8px 20px 4px;
+        font-size: 10px;
+        font-family: "IBM Plex Mono", monospace;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .drawer-divider.easy {
+        color: rgba(74, 222, 128, 0.6);
+      }
+      .drawer-divider.medium {
+        color: rgba(251, 191, 36, 0.6);
+      }
+      .drawer-divider.hard {
+        color: rgba(248, 113, 113, 0.6);
+      }
+
+      /* Show FAB on all screen sizes but style differently on desktop */
+      @media (min-width: 641px) {
+        #nav-fab {
+          bottom: 28px;
+          right: 28px;
+          width: 48px;
+          height: 48px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="hero">
+      <div class="hero-label">
+        Turing Assessment Prep — Easy · Medium · Hard
+      </div>
+      <h1>Function Calling &amp; Tool Use<br />with the Anthropic API</h1>
+      <p>
+        A complete guide covering all three difficulty levels. From basic tool
+        schemas through parallel calls, forced tool choice, and full agentic
+        loops.
+      </p>
+      <div
+        style="
+          display: flex;
+          gap: 10px;
+          justify-content: center;
+          margin-top: 1.25rem;
+          flex-wrap: wrap;
+        "
+      >
+        <span
+          style="
+            background: rgba(74, 222, 128, 0.12);
+            border: 1px solid rgba(74, 222, 128, 0.25);
+            border-radius: 6px;
+            padding: 4px 14px;
+            font-size: 12px;
+            font-family: &quot;IBM Plex Mono&quot;, monospace;
+            color: #86efac;
+          "
+          >Easy — §1–9</span
+        >
+        <span
+          style="
+            background: rgba(251, 191, 36, 0.12);
+            border: 1px solid rgba(251, 191, 36, 0.25);
+            border-radius: 6px;
+            padding: 4px 14px;
+            font-size: 12px;
+            font-family: &quot;IBM Plex Mono&quot;, monospace;
+            color: #fde68a;
+          "
+          >Medium — §10–13</span
+        >
+        <span
+          style="
+            background: rgba(248, 113, 113, 0.12);
+            border: 1px solid rgba(248, 113, 113, 0.25);
+            border-radius: 6px;
+            padding: 4px 14px;
+            font-size: 12px;
+            font-family: &quot;IBM Plex Mono&quot;, monospace;
+            color: #fca5a5;
+          "
+          >Hard — §14–16</span
+        >
+      </div>
+    </div>
+
+    <nav class="toc">
+      <a href="#s1">1. What Is It?</a>
+      <a href="#s2">2. Mental Model</a>
+      <a href="#s3">3. Tool Schema</a>
+      <a href="#s4">4. API Request</a>
+      <a href="#s5">5. Response Parsing</a>
+      <a href="#s6">6. Returning Results</a>
+      <a href="#s7">7. Error Handling</a>
+      <a href="#s8">8. Full Walkthrough</a>
+      <a href="#s9">9. Mistakes</a>
+      <a href="#s10" style="color: var(--amber)">10. Multiple Tools</a>
+      <a href="#s11" style="color: var(--amber)">11. tool_choice</a>
+      <a href="#s12" style="color: var(--amber)">12. Parallel Calls</a>
+      <a href="#s13" style="color: var(--amber)">13. Advanced Schemas</a>
+      <a href="#s14" style="color: var(--red)">14. Agentic Loop</a>
+      <a href="#s15" style="color: var(--red)">15. System Prompts</a>
+      <a href="#s16" style="color: var(--red)">16. Identify Tool+Payload</a>
+    </nav>
+
+    <!-- ===== SECTION 1 ===== -->
+    <div class="container">
+      <section class="section" id="s1">
+        <div class="section-num">SECTION 01</div>
+        <h2>What Is Function Calling?</h2>
+
+        <p>
+          By default, Claude can only
+          <strong style="color: #fff">read and write text</strong>. It can't
+          check your calendar, send an email, query a database, or look up live
+          data. Function calling (also called <em>tool use</em>) is the bridge
+          that lets Claude
+          <strong style="color: #fff">trigger real actions</strong> in the real
+          world.
+        </p>
+
+        <div class="callout info">
+          <div class="callout-icon">💡</div>
+          <p>
+            <strong>Simple analogy:</strong> Imagine Claude is a very smart
+            colleague who works remotely. You give them a list of "tools" they
+            can request — like "send email", "book meeting", "check stock
+            price". When they need one, they write you a note saying
+            <em>"please run send_email with these details"</em>. You run it and
+            tell them the result. That back-and-forth is function calling.
+          </p>
+        </div>
+
+        <h3>Why does it exist?</h3>
+        <p>
+          LLMs have a knowledge cutoff and no access to the outside world.
+          Function calling lets you extend Claude with any capability you build
+          — sending emails, querying APIs, reading files, controlling software.
+          The model decides <em>when</em> to use a tool; you decide
+          <em>what</em> tools exist and <em>how</em> they actually run.
+        </p>
+
+        <div class="callout success">
+          <div class="callout-icon">✅</div>
+          <p>
+            <strong>Key insight:</strong> Claude does NOT actually execute the
+            function. It only <em>tells you</em> what function to call and with
+            what arguments. <em>Your code</em> runs the function, then reports
+            the result back to Claude.
+          </p>
+        </div>
+      </section>
+
+      <!-- ===== SECTION 2 ===== -->
+      <section class="section" id="s2">
+        <div class="section-num">SECTION 02</div>
+        <h2>The Mental Model — The Full Loop</h2>
+
+        <p>
+          Function calling is a
+          <strong style="color: #fff">multi-turn conversation</strong>. Think of
+          it as a loop with 5 steps:
+        </p>
+
+        <div class="flow">
+          <div class="flow-step">
+            <div class="flow-left">
+              <div
+                class="flow-dot"
+                style="background: rgba(91, 141, 238, 0.15); color: #93b4f5"
+              >
+                1
+              </div>
+              <div class="flow-line"></div>
+            </div>
+            <div class="flow-content">
+              <div class="flow-title">
+                You define tools + send the user message
+              </div>
+              <div class="flow-desc">
+                You tell Claude what tools exist (their names, descriptions,
+                parameters) and ask a question like "Send an email to Alice
+                about tomorrow's meeting."
+              </div>
+              <span class="flow-tag badge blue">YOUR CODE → API</span>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-left">
+              <div
+                class="flow-dot"
+                style="background: rgba(167, 139, 250, 0.15); color: #c4b5fd"
+              >
+                2
+              </div>
+              <div class="flow-line"></div>
+            </div>
+            <div class="flow-content">
+              <div class="flow-title">Claude decides to use a tool</div>
+              <div class="flow-desc">
+                Claude sees the tools, determines that send_email is
+                appropriate, and responds with stop_reason: "tool_use" — it
+                lists the function name and the arguments it wants to pass.
+              </div>
+              <span class="flow-tag badge purple">API → YOUR CODE</span>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-left">
+              <div
+                class="flow-dot"
+                style="background: rgba(74, 222, 128, 0.15); color: #86efac"
+              >
+                3
+              </div>
+              <div class="flow-line"></div>
+            </div>
+            <div class="flow-content">
+              <div class="flow-title">You execute the function</div>
+              <div class="flow-desc">
+                Your code reads the arguments Claude provided, actually calls
+                send_email (or whatever the tool does), and captures the result
+                (success, error, data returned).
+              </div>
+              <span class="flow-tag badge green"
+                >YOUR CODE (local execution)</span
+              >
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-left">
+              <div
+                class="flow-dot"
+                style="background: rgba(251, 191, 36, 0.15); color: #fde68a"
+              >
+                4
+              </div>
+              <div class="flow-line"></div>
+            </div>
+            <div class="flow-content">
+              <div class="flow-title">You return the result to Claude</div>
+              <div class="flow-desc">
+                You send a new API request with the full conversation history
+                PLUS the tool result, so Claude knows what happened.
+              </div>
+              <span class="flow-tag badge amber">YOUR CODE → API</span>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-left">
+              <div
+                class="flow-dot"
+                style="background: rgba(248, 113, 113, 0.15); color: #fca5a5"
+              >
+                5
+              </div>
+            </div>
+            <div class="flow-content">
+              <div class="flow-title">Claude gives a final answer</div>
+              <div class="flow-desc">
+                Claude now responds with stop_reason: "end_turn" and gives a
+                human-readable reply like "Done! I've sent the email to Alice."
+              </div>
+              <span class="flow-tag badge red">API → YOUR CODE → User</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout warning">
+          <div class="callout-icon">⚠️</div>
+          <p>
+            <strong>Remember:</strong> This is always at least
+            <strong>2 API calls</strong> — one to get the tool call from Claude,
+            one to give Claude the result. The loop can continue if Claude needs
+            to call multiple tools.
+          </p>
+        </div>
+      </section>
+
+      <!-- ===== SECTION 3 ===== -->
+      <section class="section" id="s3">
+        <div class="section-num">SECTION 03</div>
+        <h2>Defining a Tool — The Schema</h2>
+
+        <p>
+          You describe tools to Claude using
+          <strong style="color: #fff">JSON Schema</strong>. Claude reads these
+          descriptions to understand what tools are available and when to use
+          them.
+        </p>
+
+        <h3>The tool object structure</h3>
+        <div class="prop-table">
+          <div class="prop-row">
+            <div class="prop-name">name</div>
+            <div class="prop-required">
+              <span class="badge green">required</span>
+            </div>
+            <div class="prop-desc">
+              The function's identifier. Use snake_case. e.g.
+              <code style="color: #a78bfa">send_email</code>
+            </div>
+          </div>
+          <div class="prop-row">
+            <div class="prop-name">description</div>
+            <div class="prop-required">
+              <span class="badge amber">recommended</span>
+            </div>
+            <div class="prop-desc">
+              Explains what the tool does. Claude uses this to decide WHEN to
+              call it. Write it clearly.
+            </div>
+          </div>
+          <div class="prop-row">
+            <div class="prop-name">input_schema</div>
+            <div class="prop-required">
+              <span class="badge green">required</span>
+            </div>
+            <div class="prop-desc">
+              A JSON Schema object describing the function's parameters — their
+              types, descriptions, and which are required.
+            </div>
+          </div>
+        </div>
+
+        <h3>A complete send_email tool definition</h3>
+        <div class="code-wrap">
+          <div class="code-label">Tool Definition <span>JavaScript</span></div>
+          <pre><span class="k">const</span> <span class="n">tools</span> <span class="p">=</span> <span class="p">[</span>
+  <span class="p">{</span>
+    <span class="n">name</span><span class="p">:</span> <span class="s">"send_email"</span><span class="p">,</span>           <span class="c">// ← required, snake_case</span>
+
+    <span class="n">description</span><span class="p">:</span> <span class="s">"Sends an email to one or more recipients.
+    Use this when the user wants to compose and send an email."</span><span class="p">,</span>
+
+    <span class="n">input_schema</span><span class="p">:</span> <span class="p">{</span>
+      <span class="n">type</span><span class="p">:</span> <span class="s">"object"</span><span class="p">,</span>              <span class="c">// always "object" at top level</span>
+
+      <span class="n">properties</span><span class="p">:</span> <span class="p">{</span>
+        <span class="n">to</span><span class="p">:</span> <span class="p">{</span>
+          <span class="n">type</span><span class="p">:</span> <span class="s">"string"</span><span class="p">,</span>
+          <span class="n">description</span><span class="p">:</span> <span class="s">"Recipient email address"</span>
+        <span class="p">},</span>
+        <span class="n">subject</span><span class="p">:</span> <span class="p">{</span>
+          <span class="n">type</span><span class="p">:</span> <span class="s">"string"</span><span class="p">,</span>
+          <span class="n">description</span><span class="p">:</span> <span class="s">"Email subject line"</span>
+        <span class="p">},</span>
+        <span class="n">body</span><span class="p">:</span> <span class="p">{</span>
+          <span class="n">type</span><span class="p">:</span> <span class="s">"string"</span><span class="p">,</span>
+          <span class="n">description</span><span class="p">:</span> <span class="s">"Email body content"</span>
+        <span class="p">},</span>
+        <span class="n">cc</span><span class="p">:</span> <span class="p">{</span>                          <span class="c">// ← optional field</span>
+          <span class="n">type</span><span class="p">:</span> <span class="s">"array"</span><span class="p">,</span>
+          <span class="n">items</span><span class="p">:</span> <span class="p">{</span> <span class="n">type</span><span class="p">:</span> <span class="s">"string"</span> <span class="p">},</span>  <span class="c">// array of strings</span>
+          <span class="n">description</span><span class="p">:</span> <span class="s">"CC recipients"</span>
+        <span class="p">}</span>
+      <span class="p">},</span>
+
+      <span class="n">required</span><span class="p">:</span> <span class="p">[</span><span class="s">"to"</span><span class="p">,</span> <span class="s">"subject"</span><span class="p">,</span> <span class="s">"body"</span><span class="p">]</span>  <span class="c">// ← cc is NOT here = optional</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">];</span></pre>
+        </div>
+
+        <div class="callout info">
+          <div class="callout-icon">💡</div>
+          <p>
+            <strong>How optional fields work:</strong> In JSON Schema, a field
+            is optional simply by leaving it OUT of the
+            <code style="color: #93b4f5">required</code> array. There is no
+            <code>optional: true</code> or <code>required: false</code> property
+            — those don't exist in the spec.
+          </p>
+        </div>
+
+        <h3>Common JSON Schema types</h3>
+        <table class="compare">
+          <tr>
+            <th>Type</th>
+            <th>Example</th>
+            <th>Use for</th>
+          </tr>
+          <tr>
+            <td><span class="badge purple">string</span></td>
+            <td><code style="color: #86efac">"hello"</code></td>
+            <td>Text, emails, names, IDs</td>
+          </tr>
+          <tr>
+            <td><span class="badge blue">number</span></td>
+            <td>
+              <code style="color: #fbbf24">42</code>,
+              <code style="color: #fbbf24">3.14</code>
+            </td>
+            <td>Amounts, counts, coordinates</td>
+          </tr>
+          <tr>
+            <td><span class="badge green">boolean</span></td>
+            <td>
+              <code style="color: #86efac">true</code> /
+              <code style="color: #fca5a5">false</code>
+            </td>
+            <td>Flags, toggles</td>
+          </tr>
+          <tr>
+            <td><span class="badge amber">array</span></td>
+            <td><code style="color: #86efac">["a", "b"]</code></td>
+            <td>
+              Lists. Needs an <code>items</code> property to describe element
+              type
+            </td>
+          </tr>
+          <tr>
+            <td><span class="badge red">object</span></td>
+            <td><code style="color: #86efac">{ "key": "val" }</code></td>
+            <td>Nested structures. Needs its own <code>properties</code></td>
+          </tr>
+        </table>
+      </section>
+
+      <!-- ===== SECTION 4 ===== -->
+      <section class="section" id="s4">
+        <div class="section-num">SECTION 04</div>
+        <h2>Making the API Request</h2>
+
+        <p>
+          You pass your tools array in the request alongside the messages. The
+          API handles the rest.
+        </p>
+
+        <div class="code-wrap">
+          <div class="code-label">
+            API Request (Call 1) <span>JavaScript</span>
+          </div>
+          <pre><span class="k">const</span> <span class="n">response</span> <span class="p">=</span> <span class="k">await</span> <span class="fn">fetch</span><span class="p">(</span><span class="s">"https://api.anthropic.com/v1/messages"</span><span class="p">, {</span>
+  <span class="n">method</span><span class="p">:</span> <span class="s">"POST"</span><span class="p">,</span>
+  <span class="n">headers</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s">"Content-Type"</span><span class="p">:</span> <span class="s">"application/json"</span><span class="p">,</span>
+    <span class="s">"x-api-key"</span><span class="p">:</span> <span class="s">"YOUR_API_KEY"</span><span class="p">,</span>
+    <span class="s">"anthropic-version"</span><span class="p">:</span> <span class="s">"2023-06-01"</span>
+  <span class="p">},</span>
+  <span class="n">body</span><span class="p">:</span> <span class="fn">JSON.stringify</span><span class="p">({</span>
+    <span class="n">model</span><span class="p">:</span> <span class="s">"claude-sonnet-4-20250514"</span><span class="p">,</span>
+    <span class="n">max_tokens</span><span class="p">:</span> <span class="v">1024</span><span class="p">,</span>
+    <span class="n">tools</span><span class="p">:</span> <span class="n">tools</span><span class="p">,</span>           <span class="c">// ← your tool definitions array</span>
+    <span class="n">messages</span><span class="p">:</span> <span class="p">[</span>
+      <span class="p">{</span>
+        <span class="n">role</span><span class="p">:</span> <span class="s">"user"</span><span class="p">,</span>
+        <span class="n">content</span><span class="p">:</span> <span class="s">"Send an email to alice@example.com about tomorrow's 10am meeting"</span>
+      <span class="p">}</span>
+    <span class="p">]</span>
+  <span class="p">})</span>
+<span class="p">});</span>
+
+<span class="k">const</span> <span class="n">data</span> <span class="p">=</span> <span class="k">await</span> <span class="n">response</span><span class="p">.</span><span class="fn">json</span><span class="p">();</span></pre>
+        </div>
+      </section>
+
+      <!-- ===== SECTION 5 ===== -->
+      <section class="section" id="s5">
+        <div class="section-num">SECTION 05</div>
+        <h2>Parsing the Response</h2>
+
+        <p>When Claude wants to call a tool, the response looks like this:</p>
+
+        <div class="code-wrap">
+          <div class="code-label">
+            API Response — Tool Use <span>JSON</span>
+          </div>
+          <pre><span class="p">{</span>
+  <span class="n">"id"</span><span class="p">:</span> <span class="s">"msg_01abc"</span><span class="p">,</span>
+  <span class="n">"type"</span><span class="p">:</span> <span class="s">"message"</span><span class="p">,</span>
+  <span class="n">"role"</span><span class="p">:</span> <span class="s">"assistant"</span><span class="p">,</span>
+  <span class="n">"stop_reason"</span><span class="p">:</span> <span class="s">"tool_use"</span><span class="p">,</span>   <span class="c">// ← THIS tells you a tool was requested</span>
+
+  <span class="n">"content"</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="n">"type"</span><span class="p">:</span> <span class="s">"tool_use"</span><span class="p">,</span>         <span class="c">// ← block type</span>
+      <span class="n">"id"</span><span class="p">:</span> <span class="s">"toolu_01xyz"</span><span class="p">,</span>       <span class="c">// ← SAVE THIS — you'll need it in step 4!</span>
+      <span class="n">"name"</span><span class="p">:</span> <span class="s">"send_email"</span><span class="p">,</span>      <span class="c">// ← which function to call</span>
+      <span class="n">"input"</span><span class="p">:</span> <span class="p">{</span>                  <span class="c">// ← the arguments</span>
+        <span class="n">"to"</span><span class="p">:</span> <span class="s">"alice@example.com"</span><span class="p">,</span>
+        <span class="n">"subject"</span><span class="p">:</span> <span class="s">"Meeting tomorrow at 10am"</span><span class="p">,</span>
+        <span class="n">"body"</span><span class="p">:</span> <span class="s">"Hi Alice, just a reminder about our meeting tomorrow at 10am."</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">}</span></pre>
+        </div>
+
+        <h3>How to extract the tool call in your code</h3>
+        <div class="code-wrap">
+          <div class="code-label">
+            Parsing the tool call <span>JavaScript</span>
+          </div>
+          <pre><span class="c">// 1. Check if Claude wants to use a tool</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">data</span><span class="p">.</span><span class="n">stop_reason</span> <span class="p">===</span> <span class="s">"tool_use"</span><span class="p">) {</span>
+
+  <span class="c">// 2. Find the tool_use block in content</span>
+  <span class="k">const</span> <span class="n">toolUseBlock</span> <span class="p">=</span> <span class="n">data</span><span class="p">.</span><span class="n">content</span><span class="p">.</span><span class="fn">find</span><span class="p">(</span>
+    <span class="n">block</span> <span class="p">=></span> <span class="n">block</span><span class="p">.</span><span class="n">type</span> <span class="p">===</span> <span class="s">"tool_use"</span>
+  <span class="p">);</span>
+
+  <span class="c">// 3. Extract what you need</span>
+  <span class="k">const</span> <span class="n">toolName</span> <span class="p">=</span> <span class="n">toolUseBlock</span><span class="p">.</span><span class="n">name</span><span class="p">;</span>    <span class="c">// "send_email"</span>
+  <span class="k">const</span> <span class="n">toolId</span>   <span class="p">=</span> <span class="n">toolUseBlock</span><span class="p">.</span><span class="n">id</span><span class="p">;</span>      <span class="c">// "toolu_01xyz" — keep this!</span>
+  <span class="k">const</span> <span class="n">args</span>     <span class="p">=</span> <span class="n">toolUseBlock</span><span class="p">.</span><span class="n">input</span><span class="p">;</span>  <span class="c">// { to, subject, body }</span>
+
+  <span class="c">// 4. Access specific arguments</span>
+  <span class="k">const</span> <span class="n">recipient</span> <span class="p">=</span> <span class="n">args</span><span class="p">.</span><span class="n">to</span><span class="p">;</span>       <span class="c">// "alice@example.com"</span>
+  <span class="k">const</span> <span class="n">subject</span>   <span class="p">=</span> <span class="n">args</span><span class="p">.</span><span class="n">subject</span><span class="p">;</span>  <span class="c">// "Meeting tomorrow at 10am"</span>
+<span class="p">}</span></pre>
+        </div>
+
+        <div class="callout danger">
+          <div class="callout-icon">🚨</div>
+          <p>
+            <strong>Critical distinction:</strong> The arguments are in
+            <code style="color: #fca5a5">.input</code>, NOT
+            <code>.parameters</code> or <code>.arguments</code>. This is the
+            Anthropic API — other APIs (like OpenAI) use different field names.
+            Getting this wrong is a very common mistake.
+          </p>
+        </div>
+
+        <h3>Stop reason values — what they mean</h3>
+        <table class="compare">
+          <tr>
+            <th>stop_reason</th>
+            <th>Meaning</th>
+            <th>What to do</th>
+          </tr>
+          <tr>
+            <td><code style="color: #86efac">"end_turn"</code></td>
+            <td>Claude finished normally</td>
+            <td>Show the response to the user</td>
+          </tr>
+          <tr>
+            <td><code style="color: #fbbf24">"tool_use"</code></td>
+            <td>Claude wants to call a function</td>
+            <td>Execute the function, return result</td>
+          </tr>
+          <tr>
+            <td><code style="color: #fca5a5">"max_tokens"</code></td>
+            <td>Hit the token limit mid-response</td>
+            <td>Increase max_tokens or handle gracefully</td>
+          </tr>
+        </table>
+      </section>
+
+      <!-- ===== SECTION 6 ===== -->
+      <section class="section" id="s6">
+        <div class="section-num">SECTION 06</div>
+        <h2>Returning the Tool Result</h2>
+
+        <p>
+          After you run the function, you send Claude the result by making a
+          <strong style="color: #fff">second API request</strong>. This time,
+          the messages array includes the entire conversation history — the
+          original user message, Claude's assistant response, and your tool
+          result.
+        </p>
+
+        <div class="callout info">
+          <div class="callout-icon">💡</div>
+          <p>
+            <strong>Anthropic vs OpenAI — important difference:</strong> In the
+            Anthropic API, tool results are sent as a
+            <code style="color: #93b4f5">user</code> role message with a
+            <code>tool_result</code> content block. OpenAI uses a
+            <code>tool</code> role. This is a key exam question.
+          </p>
+        </div>
+
+        <div class="code-wrap">
+          <div class="code-label">
+            API Request (Call 2) — sending the result back
+            <span>JavaScript</span>
+          </div>
+          <pre><span class="c">// First, actually run your email function</span>
+<span class="k">const</span> <span class="n">emailResult</span> <span class="p">=</span> <span class="k">await</span> <span class="fn">sendEmail</span><span class="p">(</span><span class="n">args</span><span class="p">.</span><span class="n">to</span><span class="p">,</span> <span class="n">args</span><span class="p">.</span><span class="n">subject</span><span class="p">,</span> <span class="n">args</span><span class="p">.</span><span class="n">body</span><span class="p">);</span>
+
+<span class="c">// Then send the full conversation + result back to Claude</span>
+<span class="k">const</span> <span class="n">response2</span> <span class="p">=</span> <span class="k">await</span> <span class="fn">fetch</span><span class="p">(</span><span class="s">"https://api.anthropic.com/v1/messages"</span><span class="p">, {</span>
+  <span class="n">method</span><span class="p">:</span> <span class="s">"POST"</span><span class="p">,</span>
+  <span class="c">// ... headers ...</span>
+  <span class="n">body</span><span class="p">:</span> <span class="fn">JSON.stringify</span><span class="p">({</span>
+    <span class="n">model</span><span class="p">:</span> <span class="s">"claude-sonnet-4-20250514"</span><span class="p">,</span>
+    <span class="n">max_tokens</span><span class="p">:</span> <span class="v">1024</span><span class="p">,</span>
+    <span class="n">tools</span><span class="p">:</span> <span class="n">tools</span><span class="p">,</span>
+    <span class="n">messages</span><span class="p">:</span> <span class="p">[</span>
+
+      <span class="c">// 1. Original user message</span>
+      <span class="p">{</span>
+        <span class="n">role</span><span class="p">:</span> <span class="s">"user"</span><span class="p">,</span>
+        <span class="n">content</span><span class="p">:</span> <span class="s">"Send an email to alice@example.com about tomorrow's meeting"</span>
+      <span class="p">},</span>
+
+      <span class="c">// 2. Claude's response (the tool_use block) — include it as-is</span>
+      <span class="p">{</span>
+        <span class="n">role</span><span class="p">:</span> <span class="s">"assistant"</span><span class="p">,</span>
+        <span class="n">content</span><span class="p">:</span> <span class="n">data</span><span class="p">.</span><span class="n">content</span>   <span class="c">// the whole content array from response 1</span>
+      <span class="p">},</span>
+
+      <span class="c">// 3. Your tool result — ALWAYS role: "user"</span>
+      <span class="p">{</span>
+        <span class="n">role</span><span class="p">:</span> <span class="s">"user"</span><span class="p">,</span>            <span class="c">// ← NOT "tool", NOT "function" — always "user"</span>
+        <span class="n">content</span><span class="p">:</span> <span class="p">[</span>
+          <span class="p">{</span>
+            <span class="n">type</span><span class="p">:</span> <span class="s">"tool_result"</span><span class="p">,</span>
+            <span class="n">tool_use_id</span><span class="p">:</span> <span class="n">toolId</span><span class="p">,</span>  <span class="c">// ← must match the id from the tool_use block!</span>
+            <span class="n">content</span><span class="p">:</span> <span class="s">"Email sent successfully to alice@example.com"</span>
+          <span class="p">}</span>
+        <span class="p">]</span>
+      <span class="p">}</span>
+    <span class="p">]</span>
+  <span class="p">})</span>
+<span class="p">});</span></pre>
+        </div>
+
+        <div class="callout success">
+          <div class="callout-icon">✅</div>
+          <p>
+            <strong>The tool_use_id is critical.</strong> It links the result to
+            the specific tool call Claude made. If you use the wrong ID (or omit
+            it), Claude can't understand which function was run and the
+            conversation breaks. Always save the
+            <code style="color: #86efac">id</code> from the tool_use block.
+          </p>
+        </div>
+      </section>
+
+      <!-- ===== SECTION 7 ===== -->
+      <section class="section" id="s7">
+        <div class="section-num">SECTION 07</div>
+        <h2>Error Handling</h2>
+
+        <p>
+          What if sending the email fails? You should tell Claude about the
+          failure so it can respond appropriately. Do this with
+          <code style="color: #a78bfa">is_error: true</code> in the tool_result
+          block.
+        </p>
+
+        <div class="side2">
+          <div class="side-card good">
+            <div class="side-card-label">
+              ✓ CORRECT — sending an error result
+            </div>
+            <pre><span class="p">{</span>
+  <span class="n">role</span><span class="p">:</span> <span class="s">"user"</span><span class="p">,</span>
+  <span class="n">content</span><span class="p">:</span> <span class="p">[{</span>
+    <span class="n">type</span><span class="p">:</span> <span class="s">"tool_result"</span><span class="p">,</span>
+    <span class="n">tool_use_id</span><span class="p">:</span> <span class="n">toolId</span><span class="p">,</span>
+    <span class="n">is_error</span><span class="p">:</span> <span class="k">true</span><span class="p">,</span>
+    <span class="n">content</span><span class="p">:</span> <span class="s">"SMTP error: 
+    connection refused"</span>
+  <span class="p">}]</span>
+<span class="p">}</span></pre>
+          </div>
+          <div class="side-card bad">
+            <div class="side-card-label">
+              ✗ WRONG — skipping the tool result
+            </div>
+            <pre><span class="c">// DO NOT just send a new 
+// user message like this:</span>
+<span class="p">{</span>
+  <span class="n">role</span><span class="p">:</span> <span class="s">"user"</span><span class="p">,</span>
+  <span class="n">content</span><span class="p">:</span> <span class="s">"The email 
+  failed to send"</span>
+<span class="p">}</span>
+<span class="c">// Claude won't know this
+// is a tool result</span></pre>
+          </div>
+        </div>
+
+        <p>
+          When <code style="color: #a78bfa">is_error: true</code>, Claude knows
+          the function failed and can tell the user, suggest alternatives, or
+          retry differently.
+        </p>
+
+        <h3>Full error handling pattern</h3>
+        <div class="code-wrap">
+          <div class="code-label">
+            Robust error handling <span>JavaScript</span>
+          </div>
+          <pre><span class="k">let</span> <span class="n">toolResultContent</span><span class="p">;</span>
+
+<span class="k">try</span> <span class="p">{</span>
+  <span class="k">const</span> <span class="n">result</span> <span class="p">=</span> <span class="k">await</span> <span class="fn">sendEmail</span><span class="p">(</span><span class="n">args</span><span class="p">.</span><span class="n">to</span><span class="p">,</span> <span class="n">args</span><span class="p">.</span><span class="n">subject</span><span class="p">,</span> <span class="n">args</span><span class="p">.</span><span class="n">body</span><span class="p">);</span>
+  <span class="n">toolResultContent</span> <span class="p">= {</span>
+    <span class="n">type</span><span class="p">:</span> <span class="s">"tool_result"</span><span class="p">,</span>
+    <span class="n">tool_use_id</span><span class="p">:</span> <span class="n">toolId</span><span class="p">,</span>
+    <span class="n">content</span><span class="p">:</span> <span class="s">`Email sent successfully. Message ID: </span><span class="p">${</span><span class="n">result</span><span class="p">.</span><span class="n">messageId</span><span class="p">}</span><span class="s">`</span>
+  <span class="p">};</span>
+<span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="n">error</span><span class="p">) {</span>
+  <span class="n">toolResultContent</span> <span class="p">= {</span>
+    <span class="n">type</span><span class="p">:</span> <span class="s">"tool_result"</span><span class="p">,</span>
+    <span class="n">tool_use_id</span><span class="p">:</span> <span class="n">toolId</span><span class="p">,</span>
+    <span class="n">is_error</span><span class="p">:</span> <span class="k">true</span><span class="p">,</span>                   <span class="c">// ← flag the failure</span>
+    <span class="n">content</span><span class="p">:</span> <span class="s">`Failed to send email: </span><span class="p">${</span><span class="n">error</span><span class="p">.</span><span class="n">message</span><span class="p">}</span><span class="s">`</span>  <span class="c">// ← error details</span>
+  <span class="p">};</span>
+<span class="p">}</span></pre>
+        </div>
+      </section>
+
+      <!-- ===== SECTION 8 ===== -->
+      <section class="section" id="s8">
+        <div class="section-num">SECTION 08</div>
+        <h2>Complete End-to-End Walkthrough</h2>
+        <p>Here is the entire send_email flow, start to finish, in one file.</p>
+
+        <div class="code-wrap">
+          <div class="code-label">
+            complete-email-tool.js <span>Full example</span>
+          </div>
+          <pre><span class="c">// ─────────────────────────────────────────────
+// STEP 1: Define your tool
+// ─────────────────────────────────────────────</span>
+<span class="k">const</span> <span class="n">tools</span> <span class="p">=</span> <span class="p">[{</span>
+  <span class="n">name</span><span class="p">:</span> <span class="s">"send_email"</span><span class="p">,</span>
+  <span class="n">description</span><span class="p">:</span> <span class="s">"Sends an email to a recipient"</span><span class="p">,</span>
+  <span class="n">input_schema</span><span class="p">:</span> <span class="p">{</span>
+    <span class="n">type</span><span class="p">:</span> <span class="s">"object"</span><span class="p">,</span>
+    <span class="n">properties</span><span class="p">:</span> <span class="p">{</span>
+      <span class="n">to</span><span class="p">:</span>      <span class="p">{</span> <span class="n">type</span><span class="p">:</span> <span class="s">"string"</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="s">"Recipient email"</span> <span class="p">},</span>
+      <span class="n">subject</span><span class="p">:</span> <span class="p">{</span> <span class="n">type</span><span class="p">:</span> <span class="s">"string"</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="s">"Email subject"</span>   <span class="p">},</span>
+      <span class="n">body</span><span class="p">:</span>    <span class="p">{</span> <span class="n">type</span><span class="p">:</span> <span class="s">"string"</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="s">"Email body"</span>      <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="n">required</span><span class="p">:</span> <span class="p">[</span><span class="s">"to"</span><span class="p">,</span> <span class="s">"subject"</span><span class="p">,</span> <span class="s">"body"</span><span class="p">]</span>
+  <span class="p">}</span>
+<span class="p">}];</span>
+
+<span class="c">// ─────────────────────────────────────────────
+// STEP 2: First API call — ask Claude to help
+// ─────────────────────────────────────────────</span>
+<span class="k">const</span> <span class="n">userMessage</span> <span class="p">=</span> <span class="s">"Send an email to alice@example.com about tomorrow's 10am meeting"</span><span class="p">;</span>
+
+<span class="k">const</span> <span class="n">res1</span> <span class="p">=</span> <span class="k">await</span> <span class="fn">callAPI</span><span class="p">([{</span> <span class="n">role</span><span class="p">:</span> <span class="s">"user"</span><span class="p">,</span> <span class="n">content</span><span class="p">:</span> <span class="n">userMessage</span> <span class="p">}]);</span>
+
+<span class="c">// ─────────────────────────────────────────────
+// STEP 3: Check if Claude wants to use a tool
+// ─────────────────────────────────────────────</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">res1</span><span class="p">.</span><span class="n">stop_reason</span> <span class="p">===</span> <span class="s">"tool_use"</span><span class="p">) {</span>
+
+  <span class="k">const</span> <span class="n">toolCall</span> <span class="p">=</span> <span class="n">res1</span><span class="p">.</span><span class="n">content</span><span class="p">.</span><span class="fn">find</span><span class="p">(</span><span class="n">b</span> <span class="p">=></span> <span class="n">b</span><span class="p">.</span><span class="n">type</span> <span class="p">===</span> <span class="s">"tool_use"</span><span class="p">);</span>
+  <span class="k">const</span> <span class="p">{</span> <span class="n">id</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">input</span> <span class="p">}</span> <span class="p">=</span> <span class="n">toolCall</span><span class="p">;</span>
+
+  <span class="c">// id    = "toolu_01xyz"
+  // name  = "send_email"
+  // input = { to, subject, body }</span>
+
+  <span class="c">// ─────────────────────────────────────────────
+  // STEP 4: Run the actual function
+  // ─────────────────────────────────────────────</span>
+  <span class="k">let</span> <span class="n">resultText</span><span class="p">;</span>
+  <span class="k">let</span> <span class="n">isError</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
+
+  <span class="k">try</span> <span class="p">{</span>
+    <span class="k">await</span> <span class="fn">sendEmailViaAPI</span><span class="p">(</span><span class="n">input</span><span class="p">.</span><span class="n">to</span><span class="p">,</span> <span class="n">input</span><span class="p">.</span><span class="n">subject</span><span class="p">,</span> <span class="n">input</span><span class="p">.</span><span class="n">body</span><span class="p">);</span>
+    <span class="n">resultText</span> <span class="p">=</span> <span class="s">"Email sent successfully"</span><span class="p">;</span>
+  <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="n">e</span><span class="p">) {</span>
+    <span class="n">resultText</span> <span class="p">=</span> <span class="n">e</span><span class="p">.</span><span class="n">message</span><span class="p">;</span>
+    <span class="n">isError</span> <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="c">// ─────────────────────────────────────────────
+  // STEP 5: Send result back — second API call
+  // ─────────────────────────────────────────────</span>
+  <span class="k">const</span> <span class="n">res2</span> <span class="p">=</span> <span class="k">await</span> <span class="fn">callAPI</span><span class="p">([</span>
+    <span class="p">{</span> <span class="n">role</span><span class="p">:</span> <span class="s">"user"</span><span class="p">,</span> <span class="n">content</span><span class="p">:</span> <span class="n">userMessage</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="n">role</span><span class="p">:</span> <span class="s">"assistant"</span><span class="p">,</span> <span class="n">content</span><span class="p">:</span> <span class="n">res1</span><span class="p">.</span><span class="n">content</span> <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="n">role</span><span class="p">:</span> <span class="s">"user"</span><span class="p">,</span>             <span class="c">// ← ALWAYS "user" for tool results</span>
+      <span class="n">content</span><span class="p">:</span> <span class="p">[{</span>
+        <span class="n">type</span><span class="p">:</span> <span class="s">"tool_result"</span><span class="p">,</span>
+        <span class="n">tool_use_id</span><span class="p">:</span> <span class="n">id</span><span class="p">,</span>       <span class="c">// ← match the id from step 3</span>
+        <span class="n">content</span><span class="p">:</span> <span class="n">resultText</span><span class="p">,</span>
+        <span class="p">...</span><span class="p">(</span><span class="n">isError</span> <span class="p">&&</span> <span class="p">{</span> <span class="n">is_error</span><span class="p">:</span> <span class="k">true</span> <span class="p">})</span>
+      <span class="p">}]</span>
+    <span class="p">}</span>
+  <span class="p">]);</span>
+
+  <span class="c">// ─────────────────────────────────────────────
+  // STEP 6: Claude gives final answer
+  // ─────────────────────────────────────────────</span>
+  <span class="c">// res2.stop_reason === "end_turn"
+  // res2.content[0].text === "Done! I've sent the email to Alice."</span>
+  <span class="fn">console</span><span class="p">.</span><span class="fn">log</span><span class="p">(</span><span class="n">res2</span><span class="p">.</span><span class="n">content</span><span class="p">[</span><span class="v">0</span><span class="p">].</span><span class="n">text</span><span class="p">);</span>
+<span class="p">}</span></pre>
+        </div>
+      </section>
+
+      <!-- ===== SECTION 9 ===== -->
+      <section class="section" id="s9">
+        <div class="section-num">SECTION 09</div>
+        <h2>Common Mistakes to Avoid</h2>
+
+        <table class="compare">
+          <tr>
+            <th>Mistake</th>
+            <th>Wrong</th>
+            <th>Correct</th>
+          </tr>
+          <tr>
+            <td>Wrong field for arguments</td>
+            <td>
+              <code style="color: #fca5a5">.parameters</code> or
+              <code style="color: #fca5a5">.arguments</code>
+            </td>
+            <td><code style="color: #86efac">.input</code></td>
+          </tr>
+          <tr>
+            <td>Wrong role for tool result</td>
+            <td>
+              <code style="color: #fca5a5">role: "tool"</code> or
+              <code style="color: #fca5a5">"function"</code>
+            </td>
+            <td><code style="color: #86efac">role: "user"</code></td>
+          </tr>
+          <tr>
+            <td>Optional field schema</td>
+            <td>
+              <code style="color: #fca5a5">required: false</code> inside
+              property
+            </td>
+            <td>
+              Omit from the <code style="color: #86efac">required[]</code> array
+            </td>
+          </tr>
+          <tr>
+            <td>Missing tool_use_id</td>
+            <td>Omitting the ID in tool_result</td>
+            <td>
+              Always include
+              <code style="color: #86efac">tool_use_id</code> matching the call
+            </td>
+          </tr>
+          <tr>
+            <td>Wrong stop_reason check</td>
+            <td><code style="color: #fca5a5">"function_call"</code></td>
+            <td><code style="color: #86efac">"tool_use"</code></td>
+          </tr>
+          <tr>
+            <td>Skipping error signal</td>
+            <td>Sending a plain user message on failure</td>
+            <td>
+              Use <code style="color: #86efac">is_error: true</code> in
+              tool_result
+            </td>
+          </tr>
+          <tr>
+            <td>Array of strings schema</td>
+            <td><code style="color: #fca5a5">type: "string[]"</code></td>
+            <td>
+              <code style="color: #86efac"
+                >type: "array", items: { type: "string" }</code
+              >
+            </td>
+          </tr>
+        </table>
+
+        <div class="callout warning">
+          <div class="callout-icon">⚠️</div>
+          <p>
+            <strong>Remember the context:</strong> Turing tests specifically
+            cover the Anthropic API. If you've seen OpenAI function calling
+            before, be careful — several field names and patterns are different.
+            When in doubt, think:
+            <em
+              >Anthropic uses "user" role and ".input", not "tool" role and
+              ".arguments".</em
+            >
+          </p>
+        </div>
+      </section>
+
+      <!-- ===== DIFFICULTY DIVIDER: MEDIUM ===== -->
+      <div
+        style="
+          background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(251, 191, 36, 0.15),
+            transparent
+          );
+          border-top: 1px solid rgba(251, 191, 36, 0.3);
+          border-bottom: 1px solid rgba(251, 191, 36, 0.3);
+          padding: 1rem 2rem;
+          text-align: center;
+          margin: 1rem 0;
+        "
+      >
+        <span
+          style="
+            font-family: &quot;IBM Plex Mono&quot;, monospace;
+            font-size: 12px;
+            color: #fbbf24;
+            letter-spacing: 0.12em;
+          "
+          >MEDIUM LEVEL — Sections 10–13</span
+        >
+      </div>
+
+      <!-- ===== SECTION 10 ===== -->
+      <section class="section" id="s10">
+        <div class="section-num">SECTION 10</div>
+        <h2>Multiple Tools — Claude Choosing Between Them</h2>
+
+        <p>
+          In real applications, you'll define several tools at once. Claude
+          reads the <code style="color: #a78bfa">description</code> of each tool
+          and decides which one (if any) to call based on the user's request.
+          <strong style="color: #fff"
+            >The description is how Claude makes the decision</strong
+          >
+          — write it precisely.
+        </p>
+
+        <div class="code-wrap">
+          <div class="code-label">
+            Defining multiple tools <span>JavaScript</span>
+          </div>
+          <pre><span class="k">const</span> <span class="n">tools</span> <span class="p">=</span> <span class="p">[</span>
+  <span class="p">{</span>
+    <span class="n">name</span><span class="p">:</span> <span class="s">"send_email"</span><span class="p">,</span>
+    <span class="n">description</span><span class="p">:</span> <span class="s">"Send an email to a recipient. Use when the user wants to SEND a message."</span><span class="p">,</span>
+    <span class="n">input_schema</span><span class="p">:</span> <span class="p">{</span>
+      <span class="n">type</span><span class="p">:</span> <span class="s">"object"</span><span class="p">,</span>
+      <span class="n">properties</span><span class="p">:</span> <span class="p">{</span>
+        <span class="n">to</span><span class="p">:</span>      <span class="p">{</span> <span class="n">type</span><span class="p">:</span> <span class="s">"string"</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="s">"Recipient email address"</span> <span class="p">},</span>
+        <span class="n">subject</span><span class="p">:</span> <span class="p">{</span> <span class="n">type</span><span class="p">:</span> <span class="s">"string"</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="s">"Email subject line"</span> <span class="p">},</span>
+        <span class="n">body</span><span class="p">:</span>    <span class="p">{</span> <span class="n">type</span><span class="p">:</span> <span class="s">"string"</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="s">"Email body content"</span> <span class="p">}</span>
+      <span class="p">},</span>
+      <span class="n">required</span><span class="p">:</span> <span class="p">[</span><span class="s">"to"</span><span class="p">,</span> <span class="s">"subject"</span><span class="p">,</span> <span class="s">"body"</span><span class="p">]</span>
+    <span class="p">}</span>
+  <span class="p">},</span>
+  <span class="p">{</span>
+    <span class="n">name</span><span class="p">:</span> <span class="s">"search_inbox"</span><span class="p">,</span>
+    <span class="n">description</span><span class="p">:</span> <span class="s">"Search emails in the inbox. Use when the user wants to FIND or READ emails."</span><span class="p">,</span>
+    <span class="n">input_schema</span><span class="p">:</span> <span class="p">{</span>
+      <span class="n">type</span><span class="p">:</span> <span class="s">"object"</span><span class="p">,</span>
+      <span class="n">properties</span><span class="p">:</span> <span class="p">{</span>
+        <span class="n">query</span><span class="p">:</span>  <span class="p">{</span> <span class="n">type</span><span class="p">:</span> <span class="s">"string"</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="s">"Search keywords"</span> <span class="p">},</span>
+        <span class="n">limit</span><span class="p">:</span>  <span class="p">{</span> <span class="n">type</span><span class="p">:</span> <span class="s">"number"</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="s">"Max results (default 10)"</span> <span class="p">}</span>
+      <span class="p">},</span>
+      <span class="n">required</span><span class="p">:</span> <span class="p">[</span><span class="s">"query"</span><span class="p">]</span>  <span class="c">// limit is optional</span>
+    <span class="p">}</span>
+  <span class="p">},</span>
+  <span class="p">{</span>
+    <span class="n">name</span><span class="p">:</span> <span class="s">"create_draft"</span><span class="p">,</span>
+    <span class="n">description</span><span class="p">:</span> <span class="s">"Save an email as a draft without sending. Use when the user wants to SAVE for later."</span><span class="p">,</span>
+    <span class="n">input_schema</span><span class="p">:</span> <span class="p">{</span>
+      <span class="n">type</span><span class="p">:</span> <span class="s">"object"</span><span class="p">,</span>
+      <span class="n">properties</span><span class="p">:</span> <span class="p">{</span>
+        <span class="n">to</span><span class="p">:</span>      <span class="p">{</span> <span class="n">type</span><span class="p">:</span> <span class="s">"string"</span> <span class="p">},</span>
+        <span class="n">subject</span><span class="p">:</span> <span class="p">{</span> <span class="n">type</span><span class="p">:</span> <span class="s">"string"</span> <span class="p">},</span>
+        <span class="n">body</span><span class="p">:</span>    <span class="p">{</span> <span class="n">type</span><span class="p">:</span> <span class="s">"string"</span> <span class="p">}</span>
+      <span class="p">},</span>
+      <span class="n">required</span><span class="p">:</span> <span class="p">[</span><span class="s">"to"</span><span class="p">,</span> <span class="s">"subject"</span><span class="p">,</span> <span class="s">"body"</span><span class="p">]</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">];</span></pre>
+        </div>
+
+        <div class="callout info">
+          <div class="callout-icon">💡</div>
+          <p>
+            <strong>Tool selection is driven by description.</strong> If a user
+            says "find the email from Bob last week", Claude picks
+            <code style="color: #93b4f5">search_inbox</code>. If they say "send
+            this to Bob", Claude picks
+            <code style="color: #93b4f5">send_email</code>. The description is
+            your contract with Claude about when to use each tool.
+          </p>
+        </div>
+
+        <h3>What if no tool is needed?</h3>
+        <p>
+          If Claude decides the user's request doesn't require any tool (e.g.,
+          "What time is it in New York?"), it just responds with
+          <code style="color: #86efac">stop_reason: "end_turn"</code> and a
+          plain text answer. Your code should handle both cases.
+        </p>
+
+        <div class="code-wrap">
+          <div class="code-label">
+            Handling both outcomes <span>JavaScript</span>
+          </div>
+          <pre><span class="k">if</span> <span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="n">stop_reason</span> <span class="p">===</span> <span class="s">"tool_use"</span><span class="p">) {</span>
+  <span class="c">// Claude wants to call a tool — handle it</span>
+  <span class="k">const</span> <span class="n">toolCall</span> <span class="p">=</span> <span class="n">response</span><span class="p">.</span><span class="n">content</span><span class="p">.</span><span class="fn">find</span><span class="p">(</span><span class="n">b</span> <span class="p">=></span> <span class="n">b</span><span class="p">.</span><span class="n">type</span> <span class="p">===</span> <span class="s">"tool_use"</span><span class="p">);</span>
+  <span class="c">// dispatch based on which tool was chosen</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">toolCall</span><span class="p">.</span><span class="n">name</span> <span class="p">===</span> <span class="s">"send_email"</span><span class="p">)</span>    <span class="k">await</span> <span class="fn">handleSendEmail</span><span class="p">(</span><span class="n">toolCall</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">toolCall</span><span class="p">.</span><span class="n">name</span> <span class="p">===</span> <span class="s">"search_inbox"</span><span class="p">)</span>  <span class="k">await</span> <span class="fn">handleSearch</span><span class="p">(</span><span class="n">toolCall</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">toolCall</span><span class="p">.</span><span class="n">name</span> <span class="p">===</span> <span class="s">"create_draft"</span><span class="p">)</span>   <span class="k">await</span> <span class="fn">handleDraft</span><span class="p">(</span><span class="n">toolCall</span><span class="p">);</span>
+
+<span class="p">}</span> <span class="k">else if</span> <span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="n">stop_reason</span> <span class="p">===</span> <span class="s">"end_turn"</span><span class="p">) {</span>
+  <span class="c">// No tool needed — show the text response directly</span>
+  <span class="k">const</span> <span class="n">text</span> <span class="p">=</span> <span class="n">response</span><span class="p">.</span><span class="n">content</span><span class="p">.</span><span class="fn">find</span><span class="p">(</span><span class="n">b</span> <span class="p">=></span> <span class="n">b</span><span class="p">.</span><span class="n">type</span> <span class="p">===</span> <span class="s">"text"</span><span class="p">).</span><span class="n">text</span><span class="p">;</span>
+  <span class="fn">console</span><span class="p">.</span><span class="fn">log</span><span class="p">(</span><span class="n">text</span><span class="p">);</span>
+<span class="p">}</span></pre>
+        </div>
+      </section>
+
+      <!-- ===== SECTION 11 ===== -->
+      <section class="section" id="s11">
+        <div class="section-num">SECTION 11</div>
+        <h2>tool_choice — Controlling Which Tool Claude Uses</h2>
+
+        <p>
+          By default, Claude decides <em>whether</em> to use a tool. But you can
+          override this behaviour with the
+          <code style="color: #a78bfa">tool_choice</code> parameter.
+        </p>
+
+        <table class="compare">
+          <tr>
+            <th>tool_choice value</th>
+            <th>Behaviour</th>
+            <th>When to use</th>
+          </tr>
+          <tr>
+            <td><code style="color: #86efac">{ type: "auto" }</code></td>
+            <td>Default. Claude decides whether to use a tool.</td>
+            <td>Most conversations</td>
+          </tr>
+          <tr>
+            <td><code style="color: #fbbf24">{ type: "any" }</code></td>
+            <td>Claude MUST call at least one tool, but picks which one.</td>
+            <td>When you always need a structured output</td>
+          </tr>
+          <tr>
+            <td>
+              <code style="color: #fca5a5"
+                >{ type: "tool", name: "send_email" }</code
+              >
+            </td>
+            <td>Claude MUST call exactly this specific tool.</td>
+            <td>When you know exactly which tool is needed</td>
+          </tr>
+        </table>
+
+        <div class="code-wrap">
+          <div class="code-label">
+            Using tool_choice in the request <span>JavaScript</span>
+          </div>
+          <pre><span class="c">// Force Claude to always use send_email</span>
+<span class="n">body</span><span class="p">:</span> <span class="fn">JSON.stringify</span><span class="p">({</span>
+  <span class="n">model</span><span class="p">:</span> <span class="s">"claude-sonnet-4-20250514"</span><span class="p">,</span>
+  <span class="n">max_tokens</span><span class="p">:</span> <span class="v">1024</span><span class="p">,</span>
+  <span class="n">tools</span><span class="p">:</span> <span class="n">tools</span><span class="p">,</span>
+  <span class="n">tool_choice</span><span class="p">:</span> <span class="p">{</span> <span class="n">type</span><span class="p">:</span> <span class="s">"tool"</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="s">"send_email"</span> <span class="p">},</span>  <span class="c">// ← forced</span>
+  <span class="n">messages</span><span class="p">:</span> <span class="p">[...]</span>
+<span class="p">})</span>
+
+<span class="c">// Force Claude to use some tool (but Claude picks which)</span>
+<span class="n">tool_choice</span><span class="p">:</span> <span class="p">{</span> <span class="n">type</span><span class="p">:</span> <span class="s">"any"</span> <span class="p">}</span>
+
+<span class="c">// Let Claude decide (default — you can omit this)</span>
+<span class="n">tool_choice</span><span class="p">:</span> <span class="p">{</span> <span class="n">type</span><span class="p">:</span> <span class="s">"auto"</span> <span class="p">}</span></pre>
+        </div>
+
+        <div class="callout warning">
+          <div class="callout-icon">⚠️</div>
+          <p>
+            <strong>Exam trap:</strong>
+            <code style="color: #fde68a">tool_choice</code> takes an object with
+            a <code>type</code> field — not a plain string. Writing
+            <code style="color: #fca5a5">tool_choice: "auto"</code> is wrong.
+            Always write
+            <code style="color: #fde68a"
+              >tool_choice: &#123; type: "auto" &#125;</code
+            >.
+          </p>
+        </div>
+      </section>
+
+      <!-- ===== SECTION 12 ===== -->
+      <section class="section" id="s12">
+        <div class="section-num">SECTION 12</div>
+        <h2>Parallel Tool Calls — Claude Calls Multiple Tools at Once</h2>
+
+        <p>
+          Claude can request
+          <strong style="color: #fff"
+            >more than one tool in a single response</strong
+          >. This happens when tasks are independent and can be done
+          simultaneously. For example: "Search my inbox for Bob's email AND send
+          a reply to Alice."
+        </p>
+
+        <h3>What a parallel response looks like</h3>
+        <div class="code-wrap">
+          <div class="code-label">
+            Response with multiple tool_use blocks <span>JSON</span>
+          </div>
+          <pre><span class="p">{</span>
+  <span class="n">"stop_reason"</span><span class="p">:</span> <span class="s">"tool_use"</span><span class="p">,</span>
+  <span class="n">"content"</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="n">"type"</span><span class="p">:</span> <span class="s">"tool_use"</span><span class="p">,</span>
+      <span class="n">"id"</span><span class="p">:</span> <span class="s">"toolu_01"</span><span class="p">,</span>             <span class="c">// ← first tool call</span>
+      <span class="n">"name"</span><span class="p">:</span> <span class="s">"search_inbox"</span><span class="p">,</span>
+      <span class="n">"input"</span><span class="p">:</span> <span class="p">{</span> <span class="n">"query"</span><span class="p">:</span> <span class="s">"Bob"</span> <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="n">"type"</span><span class="p">:</span> <span class="s">"tool_use"</span><span class="p">,</span>
+      <span class="n">"id"</span><span class="p">:</span> <span class="s">"toolu_02"</span><span class="p">,</span>             <span class="c">// ← second tool call</span>
+      <span class="n">"name"</span><span class="p">:</span> <span class="s">"send_email"</span><span class="p">,</span>
+      <span class="n">"input"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="n">"to"</span><span class="p">:</span> <span class="s">"alice@example.com"</span><span class="p">,</span>
+        <span class="n">"subject"</span><span class="p">:</span> <span class="s">"Reply"</span><span class="p">,</span>
+        <span class="n">"body"</span><span class="p">:</span> <span class="s">"Hi Alice!"</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">}</span></pre>
+        </div>
+
+        <h3>How to handle and return multiple results</h3>
+        <p>
+          You run BOTH functions (in parallel or sequentially), then return ALL
+          results in a single "user" message — one
+          <code style="color: #a78bfa">tool_result</code> block per call, each
+          with its own <code>tool_use_id</code>.
+        </p>
+
+        <div class="code-wrap">
+          <div class="code-label">
+            Processing parallel calls + returning both results
+            <span>JavaScript</span>
+          </div>
+          <pre><span class="c">// 1. Collect all tool_use blocks</span>
+<span class="k">const</span> <span class="n">toolCalls</span> <span class="p">=</span> <span class="n">response</span><span class="p">.</span><span class="n">content</span><span class="p">.</span><span class="fn">filter</span><span class="p">(</span><span class="n">b</span> <span class="p">=></span> <span class="n">b</span><span class="p">.</span><span class="n">type</span> <span class="p">===</span> <span class="s">"tool_use"</span><span class="p">);</span>
+
+<span class="c">// 2. Execute all tools (can run in parallel with Promise.all)</span>
+<span class="k">const</span> <span class="n">results</span> <span class="p">=</span> <span class="k">await</span> <span class="fn">Promise.all</span><span class="p">(</span>
+  <span class="n">toolCalls</span><span class="p">.</span><span class="fn">map</span><span class="p">(</span><span class="k">async</span> <span class="p">(</span><span class="n">call</span><span class="p">) =></span> <span class="p">{</span>
+    <span class="k">try</span> <span class="p">{</span>
+      <span class="k">const</span> <span class="n">output</span> <span class="p">=</span> <span class="k">await</span> <span class="fn">runTool</span><span class="p">(</span><span class="n">call</span><span class="p">.</span><span class="n">name</span><span class="p">,</span> <span class="n">call</span><span class="p">.</span><span class="n">input</span><span class="p">);</span>
+      <span class="k">return</span> <span class="p">{</span>
+        <span class="n">type</span><span class="p">:</span> <span class="s">"tool_result"</span><span class="p">,</span>
+        <span class="n">tool_use_id</span><span class="p">:</span> <span class="n">call</span><span class="p">.</span><span class="n">id</span><span class="p">,</span>      <span class="c">// ← match each call's id</span>
+        <span class="n">content</span><span class="p">:</span> <span class="n">output</span>
+      <span class="p">};</span>
+    <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="n">e</span><span class="p">) {</span>
+      <span class="k">return</span> <span class="p">{</span>
+        <span class="n">type</span><span class="p">:</span> <span class="s">"tool_result"</span><span class="p">,</span>
+        <span class="n">tool_use_id</span><span class="p">:</span> <span class="n">call</span><span class="p">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="n">is_error</span><span class="p">:</span> <span class="k">true</span><span class="p">,</span>
+        <span class="n">content</span><span class="p">:</span> <span class="n">e</span><span class="p">.</span><span class="n">message</span>
+      <span class="p">};</span>
+    <span class="p">}</span>
+  <span class="p">})</span>
+<span class="p">);</span>
+
+<span class="c">// 3. Return ALL results in ONE user message</span>
+<span class="k">const</span> <span class="n">nextRequest</span> <span class="p">=</span> <span class="p">{</span>
+  <span class="n">role</span><span class="p">:</span> <span class="s">"user"</span><span class="p">,</span>
+  <span class="n">content</span><span class="p">:</span> <span class="n">results</span>   <span class="c">// ← array of BOTH tool_result blocks</span>
+<span class="p">};</span></pre>
+        </div>
+
+        <div class="callout success">
+          <div class="callout-icon">✅</div>
+          <p>
+            <strong>Key rule:</strong> All tool results for a parallel batch go
+            into <strong>one user message</strong> with multiple
+            <code style="color: #86efac">tool_result</code> blocks. Don't send
+            them as separate messages — that breaks the conversation structure.
+          </p>
+        </div>
+
+        <h3>Mixed responses — text + tool_use together</h3>
+        <p>
+          Claude can also return a text block alongside a tool_use block. For
+          example, it might say "Sure, I'll send that email now!" and
+          simultaneously request the tool call.
+        </p>
+        <div class="code-wrap">
+          <div class="code-label">Mixed content response <span>JSON</span></div>
+          <pre><span class="p">{</span>
+  <span class="n">"stop_reason"</span><span class="p">:</span> <span class="s">"tool_use"</span><span class="p">,</span>
+  <span class="n">"content"</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span> <span class="n">"type"</span><span class="p">:</span> <span class="s">"text"</span><span class="p">,</span>     <span class="n">"text"</span><span class="p">:</span> <span class="s">"Sure! Sending that now..."</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="n">"type"</span><span class="p">:</span> <span class="s">"tool_use"</span><span class="p">,</span> <span class="n">"id"</span><span class="p">:</span> <span class="s">"toolu_01"</span><span class="p">,</span> <span class="n">"name"</span><span class="p">:</span> <span class="s">"send_email"</span><span class="p">,</span> <span class="n">"input"</span><span class="p">:</span> <span class="p">{...}</span> <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">}</span></pre>
+        </div>
+        <p>
+          Always check <code style="color: #a78bfa">stop_reason</code> first —
+          if it's <code>"tool_use"</code>, there's a tool call to process,
+          regardless of whether there's also a text block.
+        </p>
+      </section>
+
+      <!-- ===== SECTION 13 ===== -->
+      <section class="section" id="s13">
+        <div class="section-num">SECTION 13</div>
+        <h2>Advanced JSON Schemas</h2>
+
+        <p>
+          Medium and Hard tests often include more complex parameter types. Here
+          are the ones you need to know.
+        </p>
+
+        <h3>Enum — restricting to specific values</h3>
+        <div class="code-wrap">
+          <div class="code-label">Enum type <span>JSON Schema</span></div>
+          <pre><span class="n">priority</span><span class="p">:</span> <span class="p">{</span>
+  <span class="n">type</span><span class="p">:</span> <span class="s">"string"</span><span class="p">,</span>
+  <span class="n">enum</span><span class="p">:</span> <span class="p">[</span><span class="s">"low"</span><span class="p">,</span> <span class="s">"normal"</span><span class="p">,</span> <span class="s">"high"</span><span class="p">,</span> <span class="s">"urgent"</span><span class="p">],</span>  <span class="c">// Claude can only choose one of these</span>
+  <span class="n">description</span><span class="p">:</span> <span class="s">"Email priority level"</span>
+<span class="p">}</span></pre>
+        </div>
+
+        <h3>Array of objects — e.g., list of attachments</h3>
+        <div class="code-wrap">
+          <div class="code-label">
+            Array of objects <span>JSON Schema</span>
+          </div>
+          <pre><span class="n">attachments</span><span class="p">:</span> <span class="p">{</span>
+  <span class="n">type</span><span class="p">:</span> <span class="s">"array"</span><span class="p">,</span>
+  <span class="n">items</span><span class="p">:</span> <span class="p">{</span>
+    <span class="n">type</span><span class="p">:</span> <span class="s">"object"</span><span class="p">,</span>
+    <span class="n">properties</span><span class="p">:</span> <span class="p">{</span>
+      <span class="n">filename</span><span class="p">:</span> <span class="p">{</span> <span class="n">type</span><span class="p">:</span> <span class="s">"string"</span> <span class="p">},</span>
+      <span class="n">url</span><span class="p">:</span>      <span class="p">{</span> <span class="n">type</span><span class="p">:</span> <span class="s">"string"</span> <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="n">required</span><span class="p">:</span> <span class="p">[</span><span class="s">"filename"</span><span class="p">,</span> <span class="s">"url"</span><span class="p">]</span>
+  <span class="p">},</span>
+  <span class="n">description</span><span class="p">:</span> <span class="s">"List of file attachments"</span>
+<span class="p">}</span></pre>
+        </div>
+
+        <h3>Nested object — e.g., sender details</h3>
+        <div class="code-wrap">
+          <div class="code-label">Nested object <span>JSON Schema</span></div>
+          <pre><span class="n">sender</span><span class="p">:</span> <span class="p">{</span>
+  <span class="n">type</span><span class="p">:</span> <span class="s">"object"</span><span class="p">,</span>
+  <span class="n">properties</span><span class="p">:</span> <span class="p">{</span>
+    <span class="n">name</span><span class="p">:</span>  <span class="p">{</span> <span class="n">type</span><span class="p">:</span> <span class="s">"string"</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="s">"Sender display name"</span> <span class="p">},</span>
+    <span class="n">email</span><span class="p">:</span> <span class="p">{</span> <span class="n">type</span><span class="p">:</span> <span class="s">"string"</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="s">"Sender email address"</span> <span class="p">}</span>
+  <span class="p">},</span>
+  <span class="n">required</span><span class="p">:</span> <span class="p">[</span><span class="s">"email"</span><span class="p">]</span>
+<span class="p">}</span></pre>
+        </div>
+
+        <h3>strict: true — guaranteed schema validation</h3>
+        <div class="code-wrap">
+          <div class="code-label">
+            Strict mode tool definition <span>JavaScript</span>
+          </div>
+          <pre><span class="p">{</span>
+  <span class="n">name</span><span class="p">:</span> <span class="s">"send_email"</span><span class="p">,</span>
+  <span class="n">description</span><span class="p">:</span> <span class="s">"..."</span><span class="p">,</span>
+  <span class="n">strict</span><span class="p">:</span> <span class="k">true</span><span class="p">,</span>                <span class="c">// ← Claude MUST follow the schema exactly</span>
+  <span class="n">input_schema</span><span class="p">:</span> <span class="p">{</span> <span class="p">...</span> <span class="p">}</span>
+<span class="p">}</span></pre>
+        </div>
+        <p>
+          With <code style="color: #a78bfa">strict: true</code>, Claude is
+          guaranteed to produce tool inputs that match your schema exactly — no
+          missing fields, no extra fields. Useful in production where invalid
+          inputs would cause failures.
+        </p>
+      </section>
+
+      <!-- ===== DIFFICULTY DIVIDER: HARD ===== -->
+    </div>
+    <!-- /container -->
+
+    <div
+      style="
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(248, 113, 113, 0.15),
+          transparent
+        );
+        border-top: 1px solid rgba(248, 113, 113, 0.3);
+        border-bottom: 1px solid rgba(248, 113, 113, 0.3);
+        padding: 1rem 2rem;
+        text-align: center;
+        margin: 1rem 0;
+      "
+    >
+      <span
+        style="
+          font-family: &quot;IBM Plex Mono&quot;, monospace;
+          font-size: 12px;
+          color: #f87171;
+          letter-spacing: 0.12em;
+        "
+        >HARD LEVEL — Sections 14–16</span
+      >
+    </div>
+
+    <div class="container">
+      <!-- ===== SECTION 14 ===== -->
+      <section class="section" id="s14">
+        <div class="section-num">SECTION 14</div>
+        <h2>The Agentic Loop</h2>
+
+        <p>
+          Hard-level tasks involve <strong style="color: #fff">agents</strong> —
+          Claude that can take multiple actions in sequence until the job is
+          done. The key pattern is a
+          <strong style="color: #fff">while loop</strong>: keep calling the API
+          until <code style="color: #86efac">stop_reason === "end_turn"</code>.
+        </p>
+
+        <div class="callout info">
+          <div class="callout-icon">💡</div>
+          <p>
+            <strong>Email agent example:</strong> "Find Bob's latest email and
+            reply to it with a summary." This requires: (1) search_inbox, (2)
+            read the result, (3) create a reply with send_email. Claude decides
+            each step. The agentic loop keeps running until it's done.
+          </p>
+        </div>
+
+        <div class="code-wrap">
+          <div class="code-label">
+            Agentic loop pattern <span>JavaScript</span>
+          </div>
+          <pre><span class="k">async function</span> <span class="fn">runAgent</span><span class="p">(</span><span class="n">userMessage</span><span class="p">) {</span>
+  <span class="k">const</span> <span class="n">messages</span> <span class="p">=</span> <span class="p">[{</span> <span class="n">role</span><span class="p">:</span> <span class="s">"user"</span><span class="p">,</span> <span class="n">content</span><span class="p">:</span> <span class="n">userMessage</span> <span class="p">}];</span>
+
+  <span class="c">// ─── THE LOOP ───────────────────────────────</span>
+  <span class="k">while</span> <span class="p">(</span><span class="k">true</span><span class="p">) {</span>
+    <span class="k">const</span> <span class="n">response</span> <span class="p">=</span> <span class="k">await</span> <span class="fn">callClaudeAPI</span><span class="p">(</span><span class="n">messages</span><span class="p">);</span>
+
+    <span class="c">// Add Claude's response to history</span>
+    <span class="n">messages</span><span class="p">.</span><span class="fn">push</span><span class="p">({</span>
+      <span class="n">role</span><span class="p">:</span> <span class="s">"assistant"</span><span class="p">,</span>
+      <span class="n">content</span><span class="p">:</span> <span class="n">response</span><span class="p">.</span><span class="n">content</span>
+    <span class="p">});</span>
+
+    <span class="c">// ✅ Done? Return the final answer</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="n">stop_reason</span> <span class="p">===</span> <span class="s">"end_turn"</span><span class="p">) {</span>
+      <span class="k">const</span> <span class="n">text</span> <span class="p">=</span> <span class="n">response</span><span class="p">.</span><span class="n">content</span><span class="p">.</span><span class="fn">find</span><span class="p">(</span><span class="n">b</span> <span class="p">=></span> <span class="n">b</span><span class="p">.</span><span class="n">type</span> <span class="p">===</span> <span class="s">"text"</span><span class="p">)?.text;</span>
+      <span class="k">return</span> <span class="n">text</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="c">// 🔧 Tool call needed — handle it</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="n">stop_reason</span> <span class="p">===</span> <span class="s">"tool_use"</span><span class="p">) {</span>
+      <span class="k">const</span> <span class="n">toolCalls</span> <span class="p">=</span> <span class="n">response</span><span class="p">.</span><span class="n">content</span><span class="p">.</span><span class="fn">filter</span><span class="p">(</span><span class="n">b</span> <span class="p">=></span> <span class="n">b</span><span class="p">.</span><span class="n">type</span> <span class="p">===</span> <span class="s">"tool_use"</span><span class="p">);</span>
+
+      <span class="k">const</span> <span class="n">toolResults</span> <span class="p">=</span> <span class="k">await</span> <span class="fn">Promise.all</span><span class="p">(</span>
+        <span class="n">toolCalls</span><span class="p">.</span><span class="fn">map</span><span class="p">(</span><span class="k">async</span> <span class="n">call</span> <span class="p">=></span> <span class="p">{</span>
+          <span class="k">const</span> <span class="n">result</span> <span class="p">=</span> <span class="k">await</span> <span class="fn">executeTool</span><span class="p">(</span><span class="n">call</span><span class="p">.</span><span class="n">name</span><span class="p">,</span> <span class="n">call</span><span class="p">.</span><span class="n">input</span><span class="p">);</span>
+          <span class="k">return</span> <span class="p">{</span>
+            <span class="n">type</span><span class="p">:</span> <span class="s">"tool_result"</span><span class="p">,</span>
+            <span class="n">tool_use_id</span><span class="p">:</span> <span class="n">call</span><span class="p">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="n">content</span><span class="p">:</span> <span class="n">result</span>
+          <span class="p">};</span>
+        <span class="p">})</span>
+      <span class="p">);</span>
+
+      <span class="c">// Add results to messages — loop continues</span>
+      <span class="n">messages</span><span class="p">.</span><span class="fn">push</span><span class="p">({</span>
+        <span class="n">role</span><span class="p">:</span> <span class="s">"user"</span><span class="p">,</span>
+        <span class="n">content</span><span class="p">:</span> <span class="n">toolResults</span>
+      <span class="p">});</span>
+    <span class="p">}</span>
+  <span class="c">// ← loop runs again with updated messages</span>
+  <span class="p">}</span>
+<span class="p">}</span></pre>
+        </div>
+
+        <div class="callout success">
+          <div class="callout-icon">✅</div>
+          <p>
+            <strong>The pattern in plain English:</strong> 1) Ask Claude. 2) If
+            it wants a tool, run it and add the result. 3) Ask Claude again
+            (with full history). 4) Repeat until Claude says it's done (<code
+              style="color: #86efac"
+              >end_turn</code
+            >). The history grows with every loop iteration.
+          </p>
+        </div>
+      </section>
+
+      <!-- ===== SECTION 15 ===== -->
+      <section class="section" id="s15">
+        <div class="section-num">SECTION 15</div>
+        <h2>System Prompts with Tools</h2>
+
+        <p>
+          You can give Claude a
+          <code style="color: #a78bfa">system</code> prompt to set its persona,
+          constraints, or instructions — even when using tools. This is common
+          in real applications.
+        </p>
+
+        <div class="code-wrap">
+          <div class="code-label">
+            Request with system prompt + tools <span>JavaScript</span>
+          </div>
+          <pre><span class="fn">JSON.stringify</span><span class="p">({</span>
+  <span class="n">model</span><span class="p">:</span> <span class="s">"claude-sonnet-4-20250514"</span><span class="p">,</span>
+  <span class="n">max_tokens</span><span class="p">:</span> <span class="v">1024</span><span class="p">,</span>
+  <span class="n">system</span><span class="p">:</span> <span class="s">"You are an email assistant for Acme Corp.
+  Only send emails to addresses that end in @acme.com.
+  Always use a professional tone."</span><span class="p">,</span>    <span class="c">// ← system prompt</span>
+  <span class="n">tools</span><span class="p">:</span> <span class="n">tools</span><span class="p">,</span>
+  <span class="n">messages</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span> <span class="n">role</span><span class="p">:</span> <span class="s">"user"</span><span class="p">,</span> <span class="n">content</span><span class="p">:</span> <span class="s">"Send a meeting invite to the team"</span> <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">})</span></pre>
+        </div>
+
+        <div class="callout info">
+          <div class="callout-icon">💡</div>
+          <p>
+            The system prompt applies to <strong>all turns</strong> in the
+            conversation — you don't need to repeat it. It's passed once at the
+            top level of the request, not inside the messages array.
+          </p>
+        </div>
+      </section>
+
+      <!-- ===== SECTION 16 ===== -->
+      <section class="section" id="s16">
+        <div class="section-num">SECTION 16</div>
+        <h2>Identifying the Correct Tool + Payload</h2>
+
+        <p>
+          The Turing assessment specifically tests:
+          <em
+            >"given a user message and a set of tools, identify the correct tool
+            AND the correct JSON payload."</em
+          >
+          This is the most practical skill — you need to mentally simulate what
+          Claude would do.
+        </p>
+
+        <h3>How to approach any scenario question</h3>
+        <div class="flow" style="margin-top: 1rem">
+          <div class="flow-step">
+            <div class="flow-left">
+              <div
+                class="flow-dot"
+                style="background: rgba(91, 141, 238, 0.15); color: #93b4f5"
+              >
+                1
+              </div>
+              <div class="flow-line"></div>
+            </div>
+            <div class="flow-content">
+              <div class="flow-title">Read the user message carefully</div>
+              <div class="flow-desc">
+                What does the user actually want? Send, search, draft, or
+                something else?
+              </div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-left">
+              <div
+                class="flow-dot"
+                style="background: rgba(167, 139, 250, 0.15); color: #c4b5fd"
+              >
+                2
+              </div>
+              <div class="flow-line"></div>
+            </div>
+            <div class="flow-content">
+              <div class="flow-title">Match intent to tool description</div>
+              <div class="flow-desc">
+                Read each tool's description. Which one's purpose matches the
+                user's intent? Don't rely on name alone — read the description.
+              </div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-left">
+              <div
+                class="flow-dot"
+                style="background: rgba(74, 222, 128, 0.15); color: #86efac"
+              >
+                3
+              </div>
+              <div class="flow-line"></div>
+            </div>
+            <div class="flow-content">
+              <div class="flow-title">
+                Fill required parameters from the message
+              </div>
+              <div class="flow-desc">
+                Pull values directly from what the user said. If a value isn't
+                mentioned, check if the param is optional — if so, omit it; if
+                required, Claude would ask.
+              </div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-left">
+              <div
+                class="flow-dot"
+                style="background: rgba(251, 191, 36, 0.15); color: #fde68a"
+              >
+                4
+              </div>
+            </div>
+            <div class="flow-content">
+              <div class="flow-title">Validate types match the schema</div>
+              <div class="flow-desc">
+                If the schema says <code>type: "array"</code> for
+                <code>cc</code>, the payload should have
+                <code>"cc": ["x@y.com"]</code>, not a plain string.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h3>Worked example</h3>
+        <div class="callout info">
+          <div class="callout-icon">📋</div>
+          <p>
+            <strong>User says:</strong> "Send an email to hr@company.com and
+            finance@company.com asking about the Q3 budget. CC my manager at
+            mgr@company.com."
+          </p>
+        </div>
+
+        <p>
+          Given these tools:
+          <code style="color: #a78bfa">send_email</code> (with fields: to,
+          subject, body, cc[]),
+          <code style="color: #a78bfa">create_draft</code>,
+          <code style="color: #a78bfa">search_inbox</code> — the correct answer
+          is:
+        </p>
+
+        <div class="code-wrap">
+          <div class="code-label">
+            Correct tool call payload <span>JSON</span>
+          </div>
+          <pre><span class="p">{</span>
+  <span class="n">"name"</span><span class="p">:</span> <span class="s">"send_email"</span><span class="p">,</span>      <span class="c">// ← user wants to SEND, not draft or search</span>
+  <span class="n">"input"</span><span class="p">:</span> <span class="p">{</span>
+    <span class="n">"to"</span><span class="p">:</span> <span class="s">"hr@company.com"</span><span class="p">,</span>    <span class="c">// ← first recipient (or array if schema allows)</span>
+    <span class="n">"subject"</span><span class="p">:</span> <span class="s">"Q3 Budget Inquiry"</span><span class="p">,</span>
+    <span class="n">"body"</span><span class="p">:</span> <span class="s">"Hi, I wanted to ask about the Q3 budget..."</span><span class="p">,</span>
+    <span class="n">"cc"</span><span class="p">:</span> <span class="p">[</span><span class="s">"mgr@company.com"</span><span class="p">]</span>  <span class="c">// ← array, because schema type is "array"</span>
+  <span class="p">}</span>
+<span class="p">}</span></pre>
+        </div>
+
+        <h3>Common traps in scenario questions</h3>
+        <table class="compare">
+          <tr>
+            <th>Trap</th>
+            <th>Wrong thinking</th>
+            <th>Correct thinking</th>
+          </tr>
+          <tr>
+            <td>Multiple recipients</td>
+            <td>
+              Put both in <code>to</code> as a string:
+              <code>"hr@..., fin@..."</code>
+            </td>
+            <td>
+              Check if <code>to</code> is type array or string — if string, one
+              address; if array, list them
+            </td>
+          </tr>
+          <tr>
+            <td>"Save for later"</td>
+            <td>Use <code>send_email</code></td>
+            <td>Use <code>create_draft</code> — the user didn't say send</td>
+          </tr>
+          <tr>
+            <td>Missing optional field</td>
+            <td>Set <code>cc: null</code> or <code>cc: ""</code></td>
+            <td>
+              Simply omit the <code>cc</code> field entirely if there's no CC
+            </td>
+          </tr>
+          <tr>
+            <td>Subject not mentioned</td>
+            <td>Leave <code>subject</code> empty string <code>""</code></td>
+            <td>
+              Claude would infer/generate a reasonable subject from context
+            </td>
+          </tr>
+          <tr>
+            <td>Two independent tasks</td>
+            <td>One tool call for the first task only</td>
+            <td>
+              Parallel tool calls — Claude returns two
+              <code>tool_use</code> blocks
+            </td>
+          </tr>
+        </table>
+      </section>
+    </div>
+    <!-- /container -->
+
+    <footer>
+      <p>
+        Turing Function Calling Assessment Prep — Easy · Medium · Hard · All 16
+        sections · Go get it Elvin 🚀
+      </p>
+    </footer>
+
+    <!-- ── FAB + DRAWER ── -->
+    <div id="nav-overlay" onclick="closeDrawer()"></div>
+
+    <div id="nav-drawer" aria-label="Sections navigation">
+      <div class="drawer-handle"></div>
+      <div class="drawer-header">
+        SECTIONS
+        <span class="drawer-progress" id="drawer-progress"></span>
+      </div>
+      <div class="drawer-list" id="drawer-list"></div>
+    </div>
+
+    <button
+      id="nav-fab"
+      onclick="toggleDrawer()"
+      aria-label="Open sections menu"
+    >
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+        <line
+          x1="4"
+          y1="7"
+          x2="18"
+          y2="7"
+          stroke="white"
+          stroke-width="1.8"
+          stroke-linecap="round"
+        />
+        <line
+          x1="4"
+          y1="11"
+          x2="18"
+          y2="11"
+          stroke="white"
+          stroke-width="1.8"
+          stroke-linecap="round"
+        />
+        <line
+          x1="4"
+          y1="15"
+          x2="18"
+          y2="15"
+          stroke="white"
+          stroke-width="1.8"
+          stroke-linecap="round"
+        />
+      </svg>
+    </button>
+
+    <script>
+      const sections = [
+        {
+          id: "s1",
+          num: "01",
+          label: "What Is Function Calling?",
+          tier: "easy",
+        },
+        {
+          id: "s2",
+          num: "02",
+          label: "The Mental Model — The Full Loop",
+          tier: "easy",
+        },
+        {
+          id: "s3",
+          num: "03",
+          label: "Defining a Tool — The Schema",
+          tier: "easy",
+        },
+        { id: "s4", num: "04", label: "Making the API Request", tier: "easy" },
+        { id: "s5", num: "05", label: "Parsing the Response", tier: "easy" },
+        {
+          id: "s6",
+          num: "06",
+          label: "Returning the Tool Result",
+          tier: "easy",
+        },
+        { id: "s7", num: "07", label: "Error Handling", tier: "easy" },
+        {
+          id: "s8",
+          num: "08",
+          label: "Complete End-to-End Walkthrough",
+          tier: "easy",
+        },
+        {
+          id: "s9",
+          num: "09",
+          label: "Common Mistakes to Avoid",
+          tier: "easy",
+        },
+        { id: "s10", num: "10", label: "Multiple Tools", tier: "medium" },
+        { id: "s11", num: "11", label: "tool_choice Control", tier: "medium" },
+        { id: "s12", num: "12", label: "Parallel Tool Calls", tier: "medium" },
+        {
+          id: "s13",
+          num: "13",
+          label: "Advanced JSON Schemas",
+          tier: "medium",
+        },
+        { id: "s14", num: "14", label: "The Agentic Loop", tier: "hard" },
+        {
+          id: "s15",
+          num: "15",
+          label: "System Prompts with Tools",
+          tier: "hard",
+        },
+        {
+          id: "s16",
+          num: "16",
+          label: "Identify Correct Tool + Payload",
+          tier: "hard",
+        },
+      ];
+
+      const tierLabels = { easy: "Easy", medium: "Medium", hard: "Hard" };
+
+      function buildDrawer() {
+        const list = document.getElementById("drawer-list");
+        let lastTier = null;
+        sections.forEach((s) => {
+          if (s.tier !== lastTier) {
+            const div = document.createElement("div");
+            div.className = "drawer-divider " + s.tier;
+            div.textContent = tierLabels[s.tier];
+            list.appendChild(div);
+            lastTier = s.tier;
+          }
+          const btn = document.createElement("button");
+          btn.className = "drawer-item";
+          btn.id = "di-" + s.id;
+          btn.innerHTML = `
+      <div class="drawer-num ${s.tier}">${s.num}</div>
+      <div class="drawer-label">${s.label}<small>${s.tier.toUpperCase()}</small></div>
+    `;
+          btn.onclick = () => goToSection(s.id);
+          list.appendChild(btn);
+        });
+      }
+
+      function goToSection(id) {
+        closeDrawer();
+        const el = document.getElementById(id);
+        if (!el) return;
+        const top = el.getBoundingClientRect().top + window.scrollY - 16;
+        setTimeout(() => {
+          window.scrollTo({ top: top, behavior: "smooth" });
+        }, 320);
+      }
+
+      let drawerOpen = false;
+
+      function toggleDrawer() {
+        drawerOpen ? closeDrawer() : openDrawer();
+      }
+
+      function openDrawer() {
+        drawerOpen = true;
+        document.getElementById("nav-drawer").classList.add("open");
+        document.getElementById("nav-overlay").classList.add("show");
+        document.getElementById("nav-fab").classList.add("open");
+        updateActiveSection();
+      }
+
+      function closeDrawer() {
+        drawerOpen = false;
+        document.getElementById("nav-drawer").classList.remove("open");
+        document.getElementById("nav-overlay").classList.remove("show");
+        document.getElementById("nav-fab").classList.remove("open");
+      }
+
+      function updateActiveSection() {
+        const scrollY = window.scrollY + window.innerHeight * 0.3;
+        let active = sections[0].id;
+        sections.forEach((s) => {
+          const el = document.getElementById(s.id);
+          if (el && el.getBoundingClientRect().top + window.scrollY <= scrollY)
+            active = s.id;
+        });
+        sections.forEach((s) => {
+          const btn = document.getElementById("di-" + s.id);
+          if (btn) btn.classList.toggle("active", s.id === active);
+        });
+        const idx = sections.findIndex((s) => s.id === active);
+        document.getElementById("drawer-progress").textContent =
+          idx + 1 + " / " + sections.length;
+        const activeBtn = document.getElementById("di-" + active);
+        if (activeBtn && drawerOpen) {
+          activeBtn.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        }
+      }
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeDrawer();
+      });
+      window.addEventListener("scroll", updateActiveSection, { passive: true });
+
+      buildDrawer();
+      updateActiveSection();
+    </script>
+  </body>
+</html>
